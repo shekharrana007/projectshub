@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<h2>{{ project.title }}</h2>
+<p>{{ project.description|linebreaks }}</p>
+<p><strong>Owner:</strong> {{ project.owner.username }}</p>
+<p><strong>University:</strong> {{ project.university }}</p>
+<p><strong>Tags:</strong> {{ project.tags }}</p>
+
+{% if project.attachment %}
+  <p><a href="{{ project.attachment.url }}" target="_blank">Download attachment</a></p>
+{% endif %}
+
+<h5>Collaborators</h5>
+<ul>
+  {% for m in project.membership_set.all %}
+    <li>{{ m.user.username }} ({{ m.role }})</li>
+  {% empty %}
+    <li>No collaborators yet.</li>
+  {% endfor %}
+</ul>
+
+{% if user.is_authenticated %}
+  {% if user != project.owner %}
+    {% if user in project.collaborators.all %}
+      <span class="badge bg-success">You are a collaborator</span>
+    {% else %}
+      <a class="btn btn-sm btn-success" href="{% url 'project_join' project.pk %}">Join Project</a>
+    {% endif %}
+  {% else %}
+    <a class="btn btn-sm btn-primary" href="{% url 'project_edit' project.pk %}">Edit</a>
+    <form method="post" action="{% url 'project_delete' project.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-danger">Delete</button>
+    </form>
+  {% endif %}
+{% endif %}
+
+<hr>
+<h4>Comments</h4>
+<ul class="list-group mb-3">
+  {% for c in project.comments.all %}
+    <li class="list-group-item"><strong>{{ c.author.username }}</strong> — {{ c.content }} <br><small>{{ c.created_at }}</small></li>
+  {% empty %}
+    <li class="list-group-item">No comments.</li>
+  {% endfor %}
+</ul>
+
+{% if user.is_authenticated %}
+  <form method="post" action="{% url 'add_comment' project.pk %}">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <button class="btn btn-sm btn-primary mt-2">Add Comment</button>
+  </form>
+{% else %}
+  <p><a href="{% url 'login' %}">Login</a> to comment or collaborate.</p>
+{% endif %}
+
+{% endblock %}
